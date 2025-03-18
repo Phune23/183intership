@@ -1,32 +1,37 @@
+# Sử dụng PHP 8.1 với Apache
 FROM php:8.1-apache
 
-# Install system dependencies
+# Cài đặt Composer
 RUN apt-get update && apt-get install -y \
-    libzip-dev \
-    zip \
+    curl \
     unzip \
+    zip \
+    libzip-dev \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
-    libpng-dev
+    libpng-dev \
+    && docker-php-ext-install mysqli pdo_mysql zip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd \
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install mysqli pdo_mysql zip
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-RUN docker-php-ext-install -j$(nproc) gd
-
-# Enable Apache modules
+# Bật module rewrite của Apache
 RUN a2enmod rewrite
 
-# Set working directory
+# Thiết lập thư mục làm việc
 WORKDIR /var/www/html
 
-# Copy project files
+# Sao chép mã nguồn vào container
 COPY . /var/www/html/
 
-# Set permissions
+# Cài đặt các thư viện PHP từ Composer
+RUN composer install --no-dev --optimize-autoloader
+
+# Thiết lập quyền cho thư mục dự án
 RUN chown -R www-data:www-data /var/www/html
 
-# Apache configuration to use index.php as default
+# Cấu hình Apache để hỗ trợ .htaccess và index.php mặc định
 RUN echo '<Directory /var/www/html>\n\
     Options Indexes FollowSymLinks\n\
     AllowOverride All\n\
@@ -35,5 +40,8 @@ RUN echo '<Directory /var/www/html>\n\
 </Directory>' > /etc/apache2/conf-available/docker-php.conf \
     && a2enconf docker-php
 
-# Expose port 80
+# Mở cổng 80
 EXPOSE 80
+
+# Chạy Apache khi container khởi động
+CMD ["apache2-foreground"]
