@@ -46,8 +46,9 @@ RUN echo '<Directory /var/www/html>\n\
 </Directory>' > /etc/apache2/conf-available/docker-php.conf \
     && a2enconf docker-php
 
-# Mở cổng 80
-EXPOSE 80
+# Mở cổng 8080
+EXPOSE 8080
 
 # Chạy Apache khi container khởi động
-CMD ["apache2-foreground"]
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "./public"]
+
