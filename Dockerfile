@@ -46,9 +46,11 @@ RUN echo '<Directory /var/www/html>\n\
 </Directory>' > /etc/apache2/conf-available/docker-php.conf \
     && a2enconf docker-php
 
-# Mở cổng 8080
-EXPOSE 8080
+# Sửa lỗi "Could not reliably determine the server's fully qualified domain name"
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Mở cổng 80 thay vì 8080 (Apache mặc định chạy trên cổng 80)
+EXPOSE 80
 
 # Chạy Apache khi container khởi động
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "./public"]
-
+CMD ["apache2-foreground"]
