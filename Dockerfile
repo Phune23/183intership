@@ -1,5 +1,5 @@
-# Sử dụng PHP 8.1 với Apache
-FROM php:8.1-apache
+# Sử dụng PHP 8.2 với Apache
+FROM php:8.2-apache
 
 # Cài đặt Composer & PHP Extensions
 RUN apt-get update && apt-get install -y \
@@ -25,11 +25,14 @@ RUN a2enmod rewrite
 # Thiết lập thư mục làm việc
 WORKDIR /var/www/html
 
-# Sao chép mã nguồn vào container
-COPY . /var/www/html/
+# Sao chép trước composer.json và composer.lock để cache dependencies (tăng tốc build)
+COPY composer.json composer.lock /var/www/html/
 
-# Kiểm tra xem composer.json có tồn tại không
-RUN ls -l /var/www/html/
+# Cài đặt dependencies trước khi copy toàn bộ mã nguồn (giúp tận dụng cache)
+RUN composer install --no-dev --optimize-autoloader || composer update --no-dev --optimize-autoloader
+
+# Sao chép toàn bộ mã nguồn vào container
+COPY . /var/www/html/
 
 # Cấp quyền cho thư mục dự án
 RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html
@@ -46,5 +49,5 @@ RUN echo '<Directory /var/www/html>\n\
 # Mở cổng 80
 EXPOSE 80
 
-# Chạy Composer khi container khởi động, sau đó khởi động Apache
-CMD composer install --no-dev --optimize-autoloader && apache2-foreground
+# Chạy Apache khi container khởi động
+CMD ["apache2-foreground"]
