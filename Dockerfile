@@ -47,16 +47,21 @@ RUN echo '<Directory /var/www/html>\n\
     && a2enconf docker-php
 
 # Sửa lỗi "Could not reliably determine the server's fully qualified domain name"
-RUN echo "ServerName https://183intership-port.up.railway.app/" >> /etc/apache2/apache2.conf
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Đổi Apache lắng nghe trên cổng 8080
-RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
-RUN sed -i 's/<VirtualHost \*:80>/<VirtualHost \*:8080>/' /etc/apache2/sites-available/000-default.conf
+# Cấu hình Apache để sử dụng PORT từ Railway
+RUN echo '#!/bin/bash\n\
+sed -i "s/Listen 80/Listen ${PORT:-8080}/" /etc/apache2/ports.conf\n\
+sed -i "s/<VirtualHost \\*:80>/<VirtualHost \\*:${PORT:-8080}>/" /etc/apache2/sites-available/000-default.conf\n\
+exec "$@"' > /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Expose đúng cổng mà Railway cần
+# Sử dụng ENTRYPOINT để khởi tạo cấu hình động
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Expose cổng (sẽ được ghi đè bởi PORT của Railway)
 EXPOSE 8080
 
-
 # Chạy Apache khi container khởi động
-CMD apachectl -D FOREGROUND
+CMD ["apachectl", "-D", "FOREGROUND"]
 
