@@ -47,7 +47,7 @@ RUN echo '<Directory /var/www/html>\n\
     && a2enconf docker-php
 
 # Sửa lỗi "Could not reliably determine the server's fully qualified domain name"
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+RUN echo "ServerName https://183intership-port.up.railway.app/" >> /etc/apache2/apache2.conf
 
 # Đổi Apache lắng nghe trên cổng 8080
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
