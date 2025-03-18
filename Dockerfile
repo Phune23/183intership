@@ -58,4 +58,5 @@ EXPOSE 8080
 
 
 # Chạy Apache khi container khởi động
-CMD ["apache2-foreground"]
+CMD apachectl -D FOREGROUND
+
