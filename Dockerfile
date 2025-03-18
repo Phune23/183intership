@@ -49,8 +49,13 @@ RUN echo '<Directory /var/www/html>\n\
 # Sửa lỗi "Could not reliably determine the server's fully qualified domain name"
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Mở cổng 80 thay vì 8080 (Apache mặc định chạy trên cổng 80)
-EXPOSE 80
+# Đổi Apache lắng nghe trên cổng 8080
+RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
+RUN sed -i 's/<VirtualHost \*:80>/<VirtualHost \*:8080>/' /etc/apache2/sites-available/000-default.conf
+
+# Expose đúng cổng mà Railway cần
+EXPOSE 8080
+
 
 # Chạy Apache khi container khởi động
 CMD ["apache2-foreground"]
