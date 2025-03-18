@@ -1,5 +1,5 @@
-# Sử dụng PHP 8.2 với Apache
-FROM php:8.2-apache
+# Sử dụng PHP 8.4.5 với Apache
+FROM php:8.4.5-apache
 
 # Cài đặt Composer & PHP Extensions
 RUN apt-get update && apt-get install -y \
