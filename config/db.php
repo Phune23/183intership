@@ -6,8 +6,8 @@ $database = getenv('MYSQL_DATABASE') ?: 'railway';
 
 $mysqli = new mysqli($host, $user, $password, $database);
 
-if ($mysqli->connect_error) {
-    die("Kết nối thất bại: " . $mysqli->connect_error);
-}
-echo "Kết nối MySQL thành công!";
+// if ($mysqli->connect_error) {
+//     die("Kết nối thất bại: " . $mysqli->connect_error);
+// }
+// echo "Kết nối MySQL thành công!";
 ?>
