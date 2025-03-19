@@ -1,5 +1,7 @@
 # Sử dụng PHP 8.4.5 với Apache
 FROM php:8.4.5-apache
+FROM php:apache
+RUN docker-php-ext-install mysqli pdo pdo_mysql
 
 # Cài đặt Composer & PHP Extensions
 RUN apt-get update && apt-get install -y \
