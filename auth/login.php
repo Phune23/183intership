@@ -3,11 +3,22 @@
 session_start();
 require '../config/db.php';
 
+// DEBUG START - XÓA SAU KHI XONG
+echo "<div style='position:fixed; top:0; left:0; background:red; color:white; padding:10px; z-index:9999;'>";
+echo "DEBUG ACTIVE - " . date('H:i:s');
+echo "</div>";
+// DEBUG END
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username']); // Loại bỏ khoảng trắng thừa
-    $password = $_POST['password'];
+    $password = trim($_POST['password']); // Thêm trim() ở đây để loại bỏ khoảng trắng
+    
+    // Hiển thị giá trị POST
+    echo "<div style='position:fixed; top:40px; left:0; background:blue; color:white; padding:10px; z-index:9999;'>";
+    echo "Username: '$username' <br>Password: '$password'";
+    echo "</div>";
     
     // Debug - xóa dòng này sau khi kiểm tra xong
     error_log("Đang thử đăng nhập với username: $username");
@@ -21,20 +32,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         
-        // Debug đơn giản hơn
-        echo "<div style='background: yellow; padding: 10px; margin: 10px;'>";
-        echo "<strong>DEBUG:</strong><br>";
-        echo "Password nhập: " . $password . "<br>";
-        echo "Password DB: " . $user['password'] . "<br>";
-        echo "Khớp không: " . ($password === $user['password'] ? "CÓ" : "KHÔNG");
+        // Trim cả hai mật khẩu để loại bỏ khoảng trắng thừa
+        $cleanPassword = trim($password);
+        $cleanDbPassword = trim($user['password']);
+        
+        echo "<div style='background: red; color: white; padding: 10px; margin: 10px; position:fixed; top:80px; left:0; z-index:9999;'>";
+        echo "<strong>DEBUG CRITICAL:</strong><br>";
+        echo "Password nhập (sau trim): '" . $cleanPassword . "'<br>";
+        echo "Password DB (sau trim): '" . $cleanDbPassword . "'<br>";
+        echo "Khớp không: " . ($cleanPassword === $cleanDbPassword ? "CÓ" : "KHÔNG") . "<br>";
+        echo "Độ dài password nhập: " . strlen($cleanPassword) . "<br>";
+        echo "Độ dài password DB: " . strlen($cleanDbPassword);
         echo "</div>";
         
-        // Debug - xóa dòng này sau khi kiểm tra xong
-        error_log("Tìm thấy user: " . print_r($user, true));
-        error_log("Password nhập vào: $password, Password trong DB: " . $user['password']);
-        
-        // Thử cả hai phương pháp xác thực
-        if ($password === $user['password'] || (function_exists('password_verify') && password_verify($password, $user['password']))) {
+        // So sánh sau khi trim() cả hai giá trị
+        if ($cleanPassword === $cleanDbPassword || (function_exists('password_verify') && password_verify($cleanPassword, $user['password']))) {
             // Successful login
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
