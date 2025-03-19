@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="password" id="password" name="password" required>
             </div>
             
-            <button type="submit">Login</button>
+            <button type="submit">Đăng nhập</button>
         </form>
         
         <!-- Debug Bypass - XÓA KHI ĐƯA LÊN PRODUCTION -->
