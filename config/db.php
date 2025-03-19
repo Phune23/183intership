@@ -1,18 +1,13 @@
 <?php
-// Database configuration with environment variables
-$host = getenv('DB_HOST') ?: 'localhost';
-$username = getenv('DB_USER') ?: 'root';
-$password = getenv('DB_PASSWORD') ?: '';
-$database = getenv('DB_NAME') ?: '183internship_db';
+$host = getenv('MYSQL_HOST') ?: 'mysql.railway.internal';
+$user = getenv('MYSQL_USER') ?: 'root';
+$password = getenv('MYSQL_PASSWORD') ?: 'ZPzPPrrcfCaquTGfzfGOGzsoHqOaFFFQ';
+$database = getenv('MYSQL_DATABASE') ?: 'railway';
 
-// Create connection
-$conn = new mysqli($host, $username, $password, $database);
+$mysqli = new mysqli($host, $user, $password, $database);
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+if ($mysqli->connect_error) {
+    die("Kết nối thất bại: " . $mysqli->connect_error);
 }
-
-// Set character set
-$conn->set_charset("utf8mb4");
+echo "Kết nối MySQL thành công!";
 ?>
