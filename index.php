@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = "Invalid username or password";
     }
 }
-phpinfo();
+// phpinfo(); ẩn table thông tin php
 ?>
 
 <!DOCTYPE html>
