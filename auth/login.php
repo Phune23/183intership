@@ -6,8 +6,11 @@ require '../config/db.php';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
+    $username = trim($_POST['username']); // Loại bỏ khoảng trắng thừa
     $password = $_POST['password'];
+    
+    // Debug - xóa dòng này sau khi kiểm tra xong
+    error_log("Đang thử đăng nhập với username: $username");
     
     // Prepare statement to prevent SQL injection
     $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
@@ -18,8 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         
-        // In production, use password_verify() for hashed passwords
-        if ($password === $user['password']) {
+        // Debug - xóa dòng này sau khi kiểm tra xong
+        error_log("Tìm thấy user: " . print_r($user, true));
+        error_log("Password nhập vào: $password, Password trong DB: " . $user['password']);
+        
+        // Thử cả hai phương pháp xác thực
+        if ($password === $user['password'] || (function_exists('password_verify') && password_verify($password, $user['password']))) {
             // Successful login
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
@@ -42,10 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             exit;
         } else {
-            $error = "Incorrect password";
+            $error = "Sai mật khẩu";
+            error_log("Sai mật khẩu cho user: $username");
         }
     } else {
-        $error = "Username not found";
+        $error = "Không tìm thấy tên đăng nhập";
+        error_log("Không tìm thấy username: $username");
     }
     
     $stmt->close();
