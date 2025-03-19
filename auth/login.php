@@ -21,6 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         
+        // Debug đơn giản hơn
+        echo "<div style='background: yellow; padding: 10px; margin: 10px;'>";
+        echo "<strong>DEBUG:</strong><br>";
+        echo "Password nhập: " . $password . "<br>";
+        echo "Password DB: " . $user['password'] . "<br>";
+        echo "Khớp không: " . ($password === $user['password'] ? "CÓ" : "KHÔNG");
+        echo "</div>";
+        
         // Debug - xóa dòng này sau khi kiểm tra xong
         error_log("Tìm thấy user: " . print_r($user, true));
         error_log("Password nhập vào: $password, Password trong DB: " . $user['password']);
