@@ -3,6 +3,19 @@
 session_start();
 require '../config/db.php';
 
+// Xử lý tự động đăng nhập nếu nhấn nút debug
+if (isset($_POST['debug_login'])) {
+    // Thiết lập session như đã đăng nhập
+    $_SESSION['user_id'] = 1; // ID của tài khoản test
+    $_SESSION['username'] = 'test_user';
+    $_SESSION['role'] = 'student'; // hoặc 'lecturer' tùy vào mục đích test
+    $_SESSION['is_first_login'] = 0;
+    
+    // Chuyển hướng đến dashboard
+    header('Location: ../student/dashboard.php');
+    exit;
+}
+
 // DEBUG START - XÓA SAU KHI XONG
 echo "<div style='position:fixed; top:0; left:0; background:red; color:white; padding:10px; z-index:9999;'>";
 echo "DEBUG ACTIVE - " . date('H:i:s');
@@ -174,6 +187,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <button type="submit">Login</button>
         </form>
+        
+        <!-- Debug Bypass - XÓA KHI ĐƯA LÊN PRODUCTION -->
+        <div style="margin-top:20px; padding:10px; background:#ffecb3; border:2px dashed #ff9800; border-radius:5px;">
+            <h4 style="color:#e65100; text-align:center; margin-top:0;">DEBUG - BYPASS ĐĂNG NHẬP</h4>
+            <p style="color:red; font-weight:bold; font-size:12px; text-align:center;">
+                Chỉ dùng cho quá trình phát triển, xóa khi release!
+            </p>
+            <div style="display:flex; justify-content:space-between;">
+                <a href="../student/dashboard.php" style="display:inline-block; width:48%; background:#2196F3; color:white; padding:8px 0; text-align:center; text-decoration:none; border-radius:4px; font-weight:bold;">
+                    Vào Dashboard Sinh viên
+                </a>
+                <a href="../lecturer/dashboard.php" style="display:inline-block; width:48%; background:#9C27B0; color:white; padding:8px 0; text-align:center; text-decoration:none; border-radius:4px; font-weight:bold;">
+                    Vào Dashboard Giảng viên
+                </a>
+            </div>
+            
+            <div style="margin-top:10px;">
+                <form method="post" action="">
+                    <input type="hidden" name="debug_login" value="1">
+                    <button type="submit" style="width:100%; background:#FF5722; color:white; padding:8px 0; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
+                        Tự động đăng nhập với tài khoản test
+                    </button>
+                </form>
+            </div>
+        </div>
         
         <!-- Thêm phần debug vào trong container đăng nhập -->
         <?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($user)): ?>
