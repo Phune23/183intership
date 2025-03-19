@@ -71,10 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            /* Thay đổi từ flex thành block để các phần tử hiển thị theo chiều dọc */
+            display: block;
+            height: auto;
+            min-height: 100vh;
         }
         
         .login-container {
@@ -83,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 350px;
+            margin: 0 auto; /* Để căn giữa theo chiều ngang */
         }
         
         h2 {
@@ -153,22 +154,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <button type="submit">Login</button>
         </form>
+        
+        <!-- Thêm phần debug vào trong container đăng nhập -->
+        <?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($user)): ?>
+            <div style="margin-top:20px; padding:10px; background:#f8f8f8; border:1px solid #ddd; border-radius:3px;">
+                <h3>Thông tin debug:</h3>
+                <pre style="overflow-x: auto; white-space: pre-wrap;">
+Username đã nhập: <?php echo htmlspecialchars($username); ?>
+Username trong DB: <?php echo htmlspecialchars($user['username']); ?>
+Mật khẩu đã nhập: <?php echo htmlspecialchars($password) . " (độ dài: " . strlen($password) . ")"; ?>
+Mật khẩu trong DB: <?php echo htmlspecialchars($user['password']) . " (độ dài: " . strlen($user['password']) . ")"; ?>
+So sánh trực tiếp: <?php echo ($password === $user['password'] ? "KHỚP" : "KHÔNG KHỚP"); ?>
+So sánh sau khi trim: <?php echo (trim($password) === trim($user['password']) ? "KHỚP" : "KHÔNG KHỚP"); ?>
+                </pre>
+            </div>
+        <?php endif; ?>
     </div>
-    
-    <?php if ($_SERVER['REQUEST_METHOD'] == 'POST'): ?>
-    <div style="margin-top:20px; padding:10px; background:#f8f8f8; border:1px solid #ddd; border-radius:3px;">
-        <h3>Thông tin debug (xóa sau khi fix):</h3>
-        <pre><?php 
-        echo "Username đã nhập: " . htmlspecialchars($username) . "\n";
-        if (isset($user)) {
-            echo "Username trong DB: " . htmlspecialchars($user['username']) . "\n";
-            echo "Mật khẩu đã nhập: " . htmlspecialchars($password) . " (độ dài: " . strlen($password) . ")\n";
-            echo "Mật khẩu trong DB: " . htmlspecialchars($user['password']) . " (độ dài: " . strlen($user['password']) . ")\n";
-            echo "So sánh trực tiếp: " . ($password === $user['password'] ? "KHỚP" : "KHÔNG KHỚP") . "\n";
-            echo "So sánh sau khi trim: " . (trim($password) === trim($user['password']) ? "KHỚP" : "KHÔNG KHỚP");
-        }
-        ?></pre>
-    </div>
-    <?php endif; ?>
 </body>
 </html>
