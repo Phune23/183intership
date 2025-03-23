@@ -19,10 +19,6 @@ RUN a2enmod rewrite
 # Add this after the Apache rewrite module is enabled
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Kiểm tra xem file cấu hình Apache ở đâu
-RUN ls -la /etc/apache2/sites-available/ || echo "Thư mục sites-available không tồn tại"
-RUN find /etc/apache2 -name "*.conf" | sort
-
 # Set working directory
 WORKDIR /var/www/html
 
@@ -30,50 +26,42 @@ WORKDIR /var/www/html
 RUN mkdir -p public config
 
 # Copy Composer files first for dependency installation
-COPY composer.json composer.lock ./
+COPY composer.json composer.lock* ./
 
 # Install dependencies
-RUN composer install --no-dev --optimize-autoloader || composer update --no-dev --optimize-autoloader
+RUN composer install --no-scripts --no-autoloader || echo "Skipping composer install"
 
 # Copy application code
 COPY . .
 
-# Tạo script khởi động thông minh hơn để tìm và cấu hình file Apache
+# Final composer install with autoloader optimization
+RUN composer dump-autoload --optimize --no-dev || echo "Skipping autoloader optimization"
+
+# Cấu hình file VirtualHost đơn giản
+RUN echo '<VirtualHost *:${PORT:-80}>\n\
+    ServerAdmin webmaster@localhost\n\
+    DocumentRoot /var/www/html/public\n\
+    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
+    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
+    <Directory /var/www/html/public>\n\
+        Options Indexes FollowSymLinks\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>\n\
+</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+
+# Tạo script khởi động đơn giản hơn
 RUN echo '#!/bin/bash\n\
-# Thiết lập cổng mặc định \n\
-PORT="${PORT:-8080}"\n\
+# Lấy cổng từ biến môi trường hoặc dùng 80 nếu không có\n\
+PORT="${PORT:-80}"\n\
 \n\
-# Cấu hình ports.conf nếu tồn tại\n\
-if [ -f /etc/apache2/ports.conf ]; then\n\
-    echo "Đã tìm thấy /etc/apache2/ports.conf - đang cấu hình cổng $PORT"\n\
-    sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf\n\
-else\n\
-    echo "Không tìm thấy /etc/apache2/ports.conf"\n\
-fi\n\
+# Cấu hình port.conf\n\
+sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf\n\
 \n\
-# Tìm và cấu hình tất cả các file VirtualHost\n\
-VHOST_FILES=$(find /etc/apache2 -name "*.conf" -exec grep -l "VirtualHost" {} \;)\n\
-if [ -n "$VHOST_FILES" ]; then\n\
-    for file in $VHOST_FILES; do\n\
-        echo "Đang cập nhật VirtualHost trong $file"\n\
-        sed -i "s/<VirtualHost \*:80>/<VirtualHost *:$PORT>/g" $file\n\
-    done\n\
-else\n\
-    echo "Không tìm thấy file VirtualHost nào"\n\
-fi\n\
+# Cấu hình VirtualHost\n\
+sed -i "s/\\${PORT:-80}/$PORT/g" /etc/apache2/sites-available/000-default.conf\n\
 \n\
-# Cấu hình document root là public\n\
-VHOST_FILES=$(find /etc/apache2 -name "*.conf" -exec grep -l "DocumentRoot" {} \;)\n\
-if [ -n "$VHOST_FILES" ]; then\n\
-    for file in $VHOST_FILES; do\n\
-        echo "Đang cấu hình DocumentRoot trong $file"\n\
-        sed -i "s|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g" $file\n\
-    done\n\
-else\n\
-    echo "Không tìm thấy file DocumentRoot nào"\n\
-fi\n\
-\n\
-# Kiểm tra Apache\n\
+# Kiểm tra cấu hình\n\
 echo "Cấu hình Apache:"\n\
 apache2 -t\n\
 \n\
@@ -87,7 +75,7 @@ RUN chmod +x /usr/local/bin/start-apache.sh
 RUN chown -R www-data:www-data /var/www/html
 
 # Expose the port
-EXPOSE 8080
+EXPOSE 80
 
 # Start Apache with our custom script
 CMD ["/usr/local/bin/start-apache.sh"]
