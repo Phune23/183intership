@@ -2,10 +2,10 @@
 // Database connection configuration
 
 // Get database details from environment variables (Railway provides these)
-$host = getenv('MYSQLHOST') ?: 'localhost'; 
+$host = getenv('MYSQLHOST') ?: 'mysql.railway.internal'; 
 $port = getenv('MYSQLPORT') ?: '3306';
 $username = getenv('MYSQLUSER') ?: 'root';
-$password = getenv('MYSQLPASSWORD') ?: '';
+$password = getenv('MYSQLPASSWORD') ?: 'ZPzPPrrcfCaquTGfzfGOGzsoHqOaFFFQ';
 $database = getenv('MYSQLDATABASE') ?: 'railway';
 
 // Create connection with error handling

@@ -19,6 +19,10 @@ RUN a2enmod rewrite
 # Add this after the Apache rewrite module is enabled
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
+# Kiểm tra xem file cấu hình Apache ở đâu
+RUN ls -la /etc/apache2/sites-available/ || echo "Thư mục sites-available không tồn tại"
+RUN find /etc/apache2 -name "*.conf" | sort
+
 # Set working directory
 WORKDIR /var/www/html
 
@@ -34,21 +38,10 @@ RUN composer install --no-dev --optimize-autoloader || composer update --no-dev 
 # Copy application code
 COPY . .
 
-# Create a script to update Apache config at runtime
-RUN echo '#!/bin/bash\n\
-# Configure Apache port dynamically\n\
-PORT="${PORT:-8080}"\n\
-sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf\n\
-sed -i "s/<VirtualHost \\*:80>/<VirtualHost *:$PORT>/g" /etc/apache2/sites-available/000-default.conf\n\
-\n\
-# Configure document root to public directory\n\
-sed -i "s|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|" /etc/apache2/sites-available/000-default.conf\n\
-\n\
-# Execute Apache\n\
-exec apache2-foreground\n\
-' > /usr/local/bin/start-apache.sh
+# Tạo script khởi động thông minh hơn để tìm và cấu hình file Apache
+COPY start-apache.sh /usr/local/bin/start-apache.sh
+RUN chmod +x /usr/local/bin/start-apache.sh
 
-# Make the script executable
 RUN chmod +x /usr/local/bin/start-apache.sh
 
 # Set permissions
