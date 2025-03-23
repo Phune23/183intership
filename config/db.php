@@ -1,27 +1,24 @@
 <?php
-// Xác định môi trường đang chạy (local hay trên Railway)
-$isLocal = !getenv('RAILWAY_ENVIRONMENT');
+require_once __DIR__ . '/config.php';
 
-if ($isLocal) {
-    // Cấu hình cho môi trường local (Laragon)
-    $host = 'localhost'; // hoặc 127.0.0.1
-    $user = 'root';
-    $password = ''; // Laragon thường dùng mật khẩu rỗng cho tài khoản root
-    $database = 'railway'; // Đã thay đổi thành tên database "railway"
-} else {
-    // Cấu hình cho Railway
-    $host = getenv('MYSQL_HOST') ?: 'mysql-dukp.railway.internal';
-    $user = getenv('MYSQL_USER') ?: 'root';
-    $password = getenv('MYSQL_PASSWORD') ?: 'ZPzPPrrcfCaquTGfzfGOGzsoHqOaFFFQ';
-    $database = getenv('MYSQL_DATABASE') ?: 'railway';
+$host = config(['MYSQLHOST', 'MYSQL_HOST'], 'localhost');
+$port = config(['MYSQLPORT', 'MYSQL_PORT'], '3306');
+$username = config(['MYSQLUSER', 'MYSQL_USER'], 'root');
+$password = config(['MYSQLPASSWORD', 'MYSQL_PASSWORD'], '');
+$database = config(['MYSQLDATABASE', 'MYSQL_DATABASE'], 'internship_db');
+
+// Create database connection
+try {
+    $conn = new mysqli($host, $username, $password, $database, $port);
+    
+    // Check connection
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+    
+    // Set charset to ensure proper encoding
+    $conn->set_charset("utf8mb4");
+} catch (Exception $e) {
+    die("Database connection error: " . $e->getMessage());
 }
-
-// Tạo kết nối
-$conn = new mysqli($host, $user, $password, $database);
-
-// Kiểm tra kết nối
-if ($conn->connect_error) {
-    die("Kết nối thất bại: " . $conn->connect_error);
-}
-// echo "Kết nối MySQL thành công!";
 ?>
