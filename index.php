@@ -1,8 +1,36 @@
 <?php
+// Start session at the beginning before any output
 session_start();
-require 'config/db.php';
-require_once __DIR__ . '/vendor/autoload.php';
-require_once 'auth/Auth.php';
+
+// Try to include database configuration
+try {
+    require_once __DIR__ . '/config/db.php';
+    
+    // If we get here, DB connection was successful
+    // echo "<p style='color:green'>Database connection successful!</p>";
+    
+} catch (Exception $e) {
+    echo "<h2>Database Error:</h2>";
+    echo "<pre>" . $e->getMessage() . "</pre>";
+    // Continue with limited functionality
+}
+
+// Rest of your application code
+try {
+    require_once __DIR__ . '/vendor/autoload.php';
+    require_once __DIR__ . '/auth/Auth.php';
+    
+    // Existing code continues...
+    
+    // Use PhpOffice\PhpSpreadsheet\IOFactory;
+    // Use PhpOffice\PhpSpreadsheet\Spreadsheet;
+    
+} catch (Exception $e) {
+    echo "<h2>Application Error:</h2>";
+    echo "<pre>" . $e->getMessage() . "</pre>";
+}
+
+// Continue with the rest of your application
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
