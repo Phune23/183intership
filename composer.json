@@ -5,6 +5,11 @@
         "phpmailer/phpmailer": "^6.9"
     },
     "scripts": {
-       "start": "php -S 0.0.0.0:8080 -t public"
+        "post-install-cmd": [
+            "mkdir -p public config",
+            "touch public/index.php",
+            "touch config/db.php"
+        ],
+        "start": "php -S 0.0.0.0:8080 -t public"
     }
 }

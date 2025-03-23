@@ -22,30 +22,34 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
+# Create necessary directories
+RUN mkdir -p public config
+
 # Copy Composer files first for cache
 COPY composer.json composer.lock /var/www/html/
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader || composer update --no-dev --optimize-autoloader
 
-# Copy all source code to container
+# Copy application code
 COPY . /var/www/html/
 
-# Set permissions for the project directory
-RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html
+# Ensure config directory exists and is properly populated
+RUN if [ ! -d "/var/www/html/config" ]; then mkdir -p /var/www/html/config; fi
 
-# Configure Apache to use index.php as default
-RUN sed -i 's|DirectoryIndex .*|DirectoryIndex index.php index.html|' /etc/apache2/mods-enabled/dir.conf
-
-# Configure Apache ports for Railway
-RUN sed -i "s/Listen 80/Listen ${PORT:-8080}/" /etc/apache2/ports.conf \
-    && sed -i "s/<VirtualHost \\*:80>/<VirtualHost \\*:${PORT:-8080}>/" /etc/apache2/sites-available/000-default.conf
-
-# Update Apache document root to use the public directory
+# Configure Apache to use the public directory
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
-# Expose port
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html
+
+# Configure to use environment variables for port
+ENV PORT=8080
 EXPOSE 8080
 
+# Configure Apache to use PORT environment variable
+RUN sed -i 's/80/${PORT:-8080}/g' /etc/apache2/sites-available/000-default.conf
+RUN sed -i 's/Listen 80/Listen ${PORT:-8080}/g' /etc/apache2/ports.conf
+
 # Start Apache
-CMD ["apache2-foreground"]
+CMD apache2-foreground

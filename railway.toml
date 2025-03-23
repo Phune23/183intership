@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+watchPatterns = ["public/**", "*.php"]
+
+[deploy]
+startCommand = "apache2-foreground"
+restartPolicyType = "ON_FAILURE"
+numReplicas = 1
+
+[nixpacks]
+webPort = "8080"
