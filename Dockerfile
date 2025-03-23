@@ -53,13 +53,13 @@ RUN echo '<VirtualHost *:${PORT:-80}>\n\
 # Tạo script khởi động đơn giản hơn
 RUN echo '#!/bin/bash\n\
 # Lấy cổng từ biến môi trường hoặc dùng 80 nếu không có\n\
-PORT="${PORT:-80}"\n\
+PORT="${PORT:-8080}"\n\
 \n\
 # Cấu hình port.conf\n\
 sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf\n\
 \n\
 # Cấu hình VirtualHost\n\
-sed -i "s/\\${PORT:-80}/$PORT/g" /etc/apache2/sites-available/000-default.conf\n\
+sed -i "s/\\${PORT:-8080}/$PORT/g" /etc/apache2/sites-available/000-default.conf\n\
 \n\
 # Kiểm tra cấu hình\n\
 echo "Cấu hình Apache:"\n\
