@@ -38,7 +38,7 @@ COPY . .
 RUN composer dump-autoload --optimize --no-dev || echo "Skipping autoloader optimization"
 
 # Cấu hình file VirtualHost đơn giản
-RUN echo '<VirtualHost *:${PORT:-80}>\n\
+RUN echo '<VirtualHost *:${PORT:-8080}>\n\
     ServerAdmin webmaster@localhost\n\
     DocumentRoot /var/www/html/public\n\
     ErrorLog ${APACHE_LOG_DIR}/error.log\n\
@@ -52,11 +52,11 @@ RUN echo '<VirtualHost *:${PORT:-80}>\n\
 
 # Tạo script khởi động đơn giản hơn
 RUN echo '#!/bin/bash\n\
-# Lấy cổng từ biến môi trường hoặc dùng 80 nếu không có\n\
+# Lấy cổng từ biến môi trường hoặc dùng 8080 nếu không có\n\
 PORT="${PORT:-8080}"\n\
 \n\
 # Cấu hình port.conf\n\
-sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf\n\
+sed -i "s/Listen 8080/Listen $PORT/g" /etc/apache2/ports.conf\n\
 \n\
 # Cấu hình VirtualHost\n\
 sed -i "s/\\${PORT:-8080}/$PORT/g" /etc/apache2/sites-available/000-default.conf\n\
@@ -75,7 +75,7 @@ RUN chmod +x /usr/local/bin/start-apache.sh
 RUN chown -R www-data:www-data /var/www/html
 
 # Expose the port
-EXPOSE 80
+EXPOSE 8080
 
 # Start Apache with our custom script
 CMD ["/usr/local/bin/start-apache.sh"]
