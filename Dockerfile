@@ -41,8 +41,8 @@ RUN sed -i 's|DirectoryIndex .*|DirectoryIndex index.php index.html|' /etc/apach
 RUN sed -i "s/Listen 80/Listen ${PORT:-8080}/" /etc/apache2/ports.conf \
     && sed -i "s/<VirtualHost \\*:80>/<VirtualHost \\*:${PORT:-8080}>/" /etc/apache2/sites-available/000-default.conf
 
-# Update Apache document root (optional if needed)
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html|' /etc/apache2/sites-available/000-default.conf
+# Update Apache document root to use the public directory
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
 # Expose port
 EXPOSE 8080
