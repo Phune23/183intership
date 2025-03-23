@@ -4,11 +4,11 @@ session_start();
 
 // Try to include database configuration
 try {
-    require_once __DIR__ . '/config/db.php';
-    
-    // If we get here, DB connection was successful
-    // echo "<p style='color:green'>Database connection successful!</p>";
-    
+    if (file_exists(__DIR__ . '/config/db.php')) {
+        require_once __DIR__ . '/config/db.php';
+    } else {
+        throw new Exception("Database configuration file not found!");
+    }
 } catch (Exception $e) {
     echo "<h2>Database Error:</h2>";
     echo "<pre>" . $e->getMessage() . "</pre>";

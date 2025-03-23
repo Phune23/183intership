@@ -1,18 +1,25 @@
 <?php
-// Buffer output to avoid "headers already sent" error
-ob_start();
-
-// Set the root directory
+// Define the application root directory
 define('ROOT_DIR', dirname(__DIR__));
 
-// Include the main application file
+// Start output buffering to prevent header issues
+ob_start();
+
+// Start session at the beginning
+session_start();
+
 try {
-    // Include main application file
-    require_once ROOT_DIR . '/index.php';
+    // Include the main application
+    if (file_exists(ROOT_DIR . '/index.php')) {
+        require_once ROOT_DIR . '/index.php';
+    } else {
+        throw new Exception("Main application file not found!");
+    }
 } catch (Exception $e) {
-    echo "<h2>Error loading application:</h2>";
-    echo "<pre>" . $e->getMessage() . "</pre>";
+    // Display any errors
+    echo '<h1>Application Error</h1>';
+    echo '<p>' . $e->getMessage() . '</p>';
 }
 
-// Flush the output buffer
+// End output buffering
 ob_end_flush();

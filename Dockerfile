@@ -13,43 +13,46 @@ RUN apt-get update && apt-get install -y \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Check Composer
-RUN composer --version
-
 # Enable Apache rewrite module
 RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Create necessary directories
+# Create public directory for web root
 RUN mkdir -p public config
 
-# Copy Composer files first for cache
-COPY composer.json composer.lock /var/www/html/
+# Copy Composer files first for dependency installation
+COPY composer.json composer.lock ./
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader || composer update --no-dev --optimize-autoloader
 
 # Copy application code
-COPY . /var/www/html/
+COPY . .
 
-# Ensure config directory exists and is properly populated
-RUN if [ ! -d "/var/www/html/config" ]; then mkdir -p /var/www/html/config; fi
+# Create a script to update Apache config at runtime
+RUN echo '#!/bin/bash\n\
+# Configure Apache port dynamically\n\
+PORT="${PORT:-8080}"\n\
+sed -i "s/Listen 80/Listen $PORT/g" /etc/apache2/ports.conf\n\
+sed -i "s/<VirtualHost \\*:80>/<VirtualHost *:$PORT>/g" /etc/apache2/sites-available/000-default.conf\n\
+\n\
+# Configure document root to public directory\n\
+sed -i "s|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|" /etc/apache2/sites-available/000-default.conf\n\
+\n\
+# Execute Apache\n\
+exec apache2-foreground\n\
+' > /usr/local/bin/start-apache.sh
 
-# Configure Apache to use the public directory
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
+# Make the script executable
+RUN chmod +x /usr/local/bin/start-apache.sh
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html
 
-# Configure to use environment variables for port
-ENV PORT=8080
+# Expose the port
 EXPOSE 8080
 
-# Configure Apache to use PORT environment variable
-RUN sed -i 's/80/${PORT:-8080}/g' /etc/apache2/sites-available/000-default.conf
-RUN sed -i 's/Listen 80/Listen ${PORT:-8080}/g' /etc/apache2/ports.conf
-
-# Start Apache
-CMD apache2-foreground
+# Start Apache with our custom script
+CMD ["/usr/local/bin/start-apache.sh"]
