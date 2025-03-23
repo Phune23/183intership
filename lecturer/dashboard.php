@@ -181,8 +181,21 @@ $stmt->close();
 
         <div class="card">
             <h3>Welcome, <?php echo htmlspecialchars($lecturer['first_name'] . ' ' . $lecturer['last_name']); ?></h3>
-            <p>Email: <?php echo htmlspecialchars($lecturer['email']); ?></p>
-            <p>Department: <?php echo htmlspecialchars($lecturer['department']); ?></p>
+            <?php
+            echo "<p>Xin chào, <strong>";
+            if (!empty($lecturer['first_name']) && !empty($lecturer['last_name'])) {
+                echo htmlspecialchars($lecturer['first_name'] . ' ' . $lecturer['last_name']);
+            } elseif (!empty($lecturer['username'])) {
+                echo htmlspecialchars($lecturer['username']);
+            } else {
+                echo "Giảng viên";
+            }
+            echo "</strong></p>";
+
+            echo "<p>Email: " . (!empty($lecturer['email']) ? htmlspecialchars($lecturer['email']) : "Chưa cập nhật") . "</p>";
+            echo "<p>Khoa/Bộ môn: " . (!empty($lecturer['department']) ? htmlspecialchars($lecturer['department']) : "Chưa cập nhật") . "</p>";
+            echo "<p><a href='/183intership/public/update-lecturer-profile.php'>Cập nhật thông tin cá nhân</a></p>";
+            ?>
         </div>
         
         <div class="card">

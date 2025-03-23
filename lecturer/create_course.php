@@ -10,16 +10,127 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'lecturer') {
 }
 
 $lecturer_id = 0;
-// Get lecturer ID from database
+$user_id = $_SESSION['user_id'];
+
+// Xác định tên cột ID trong bảng users
+$id_column_check = $conn->query("SHOW COLUMNS FROM users");
+$id_column = 'user_id'; // Mặc định là user_id
+while ($column = $id_column_check->fetch_assoc()) {
+    if ($column['Field'] == 'id') {
+        $id_column = 'id';
+        break;
+    }
+}
+
+// Debug ID column
+error_log("Using ID column: " . $id_column . " with value: " . $user_id);
+
+// Kiểm tra và tạo bảng lecturers nếu chưa tồn tại
+$conn->query("CREATE TABLE IF NOT EXISTS lecturers (
+    lecturer_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(100),
+    department VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)");
+
+// Kiểm tra và tạo bảng internship_courses nếu chưa tồn tại
+$conn->query("CREATE TABLE IF NOT EXISTS internship_courses (
+    course_id INT AUTO_INCREMENT PRIMARY KEY,
+    course_code VARCHAR(20) NOT NULL UNIQUE,
+    course_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    lecturer_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (lecturer_id) REFERENCES lecturers(lecturer_id)
+)");
+
+// Get lecturer information from users table using the correct ID column
+$query = "SELECT username, first_name, last_name, email, department FROM users WHERE $id_column = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user_result = $stmt->get_result();
+$user_data = $user_result->fetch_assoc();
+$stmt->close();
+
+// Debug user data
+if (!$user_data) {
+    echo "<div style='color: red; padding: 10px; background: #ffeeee; border: 1px solid red; margin: 10px 0;'>";
+    echo "User data not found with $id_column = $user_id. Check the database structure.";
+    echo "</div>";
+    
+    // Display available users for debugging
+    echo "<div style='padding: 10px; background: #eeeeff; border: 1px solid blue; margin: 10px 0;'>";
+    echo "<h3>Available users in the database:</h3>";
+    $users_check = $conn->query("SELECT * FROM users LIMIT 5");
+    echo "<table border='1' cellpadding='5'>";
+    echo "<tr>";
+    
+    // Get column names
+    $columns = $users_check->fetch_fields();
+    foreach ($columns as $column) {
+        echo "<th>{$column->name}</th>";
+    }
+    echo "</tr>";
+    
+    // Reset pointer
+    $users_check->data_seek(0);
+    
+    // Output data rows
+    while ($row = $users_check->fetch_assoc()) {
+        echo "<tr>";
+        foreach ($row as $value) {
+            echo "<td>" . htmlspecialchars($value) . "</td>";
+        }
+        echo "</tr>";
+    }
+    echo "</table>";
+    echo "</div>";
+}
+
+// Get lecturer ID from database or create new lecturer record if not exists
 $stmt = $conn->prepare("SELECT lecturer_id FROM lecturers WHERE user_id = ?");
-$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
+
 if ($result->num_rows > 0) {
     $lecturer = $result->fetch_assoc();
     $lecturer_id = $lecturer['lecturer_id'];
+} else {
+    // Lecturer doesn't exist in lecturers table, create a new record
+    $first_name = $user_data['first_name'] ?? '';
+    $last_name = $user_data['last_name'] ?? '';
+    $username = $user_data['username'] ?? '';
+    $email = $user_data['email'] ?? '';
+    $department = $user_data['department'] ?? '';
+    
+    // Debug information before insert
+    error_log("Creating new lecturer record for user_id: $user_id");
+    error_log("User data: " . json_encode($user_data));
+    
+    $insert_stmt = $conn->prepare("INSERT INTO lecturers (user_id, first_name, last_name, email, department) VALUES (?, ?, ?, ?, ?)");
+    $insert_stmt->bind_param("issss", $user_id, $first_name, $last_name, $email, $department);
+    
+    if ($insert_stmt->execute()) {
+        $lecturer_id = $conn->insert_id;
+        error_log("New lecturer_id: $lecturer_id");
+    } else {
+        die("Error creating lecturer record: " . $insert_stmt->error);
+    }
+    $insert_stmt->close();
 }
 $stmt->close();
+
+// Kiểm tra chắc chắn đã có lecturer_id hợp lệ
+if ($lecturer_id <= 0) {
+    die("Could not determine lecturer ID. Please contact system administrator.");
+}
 
 $success = '';
 $error = '';
@@ -45,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($stmt->execute()) {
             $success = "Course created successfully!";
         } else {
-            $error = "Failed to create course. Please try again.";
+            $error = "Failed to create course: " . $stmt->error;
         }
     }
     
@@ -142,6 +253,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #3498db;
             text-decoration: none;
         }
+        
+        .debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -178,6 +297,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <button type="submit">Create Course</button>
         </form>
+        
+        <div class="debug-info">
+            <p><strong>Lecturer Info:</strong> ID: <?php echo $lecturer_id; ?></p>
+            <p><strong>User ID:</strong> <?php echo $user_id; ?> (using column: <?php echo $id_column; ?>)</p>
+            <?php if ($user_data): ?>
+                <p><strong>Username:</strong> <?php echo htmlspecialchars($user_data['username'] ?? 'N/A'); ?></p>
+                <p><strong>Name:</strong> <?php echo htmlspecialchars(($user_data['first_name'] ?? '') . ' ' . ($user_data['last_name'] ?? '')); ?></p>
+            <?php else: ?>
+                <p style="color: red;">User data not found!</p>
+            <?php endif; ?>
+        </div>
     </div>
 </body>
 </html>

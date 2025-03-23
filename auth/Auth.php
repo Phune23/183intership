@@ -6,28 +6,70 @@ class Auth {
         $this->conn = $conn;
     }
     
-    public function login($username, $password) {
-        $stmt = $this->conn->prepare("SELECT user_id, username, password, role, is_first_login FROM users WHERE username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
+    /**
+     * Login user
+     * 
+     * @param string $login_username
+     * @param string $login_password
+     * @return array|bool User data on success, false on failure
+     */
+    public function login($login_username, $login_password) {
+        // Sử dụng tên biến rõ ràng để tránh xung đột
+        error_log("Login attempt: username=$login_username");
         
-        if ($result->num_rows > 0) {
+        try {
+            // Check if connection exists and is valid
+            if (!$this->conn || $this->conn->connect_error) {
+                error_log("Database connection error during login: " . ($this->conn ? $this->conn->connect_error : "No connection"));
+                return false;
+            }
+            
+            // Find user by username
+            $query = "SELECT * FROM users WHERE username = ?";
+            $stmt = $this->conn->prepare($query);
+            
+            if (!$stmt) {
+                error_log("Prepare statement failed: " . $this->conn->error);
+                return false;
+            }
+            
+            $stmt->bind_param("s", $login_username); // Sử dụng biến login_username
+            $result = $stmt->execute();
+            
+            // Kiểm tra lỗi thực thi truy vấn
+            if (!$result) {
+                error_log("Execute statement failed: " . $stmt->error);
+                return false;
+            }
+            
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                error_log("User not found: $login_username");
+                return false;
+            }
+            
             $user = $result->fetch_assoc();
             
-            // Check if password matches using password_verify
-            if (password_verify($password, $user['password'])) {
+            // Verify password
+            if (password_verify($login_password, $user['password'])) {
+                error_log("Password verified successfully for: $login_username");
+                
                 // Set session variables
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
-                $_SESSION['is_first_login'] = $user['is_first_login'];
+                $_SESSION['logged_in'] = true;
                 
                 return $user;
+            } else {
+                error_log("Invalid password for user: $login_username");
+                return false;
             }
+        } catch (Exception $e) {
+            error_log("Exception in Auth::login: " . $e->getMessage());
+            return false;
         }
-        
-        return false;
     }
     
     public function register($username, $password, $role, $userData = []) {
@@ -63,8 +105,7 @@ class Auth {
                 $stmt->execute();
             } else if ($role === 'student' && !empty($userData)) {
                 $stmt = $this->conn->prepare("INSERT INTO students (user_id, student_code, first_name, last_name, phone, email, major, dob, class_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("issssssss", $userId, $userData['student_code'], $userData['first_name'], $userData['last_name'], 
-                    $userData['phone'], $userData['email'], $userData['major'], $userData['dob'], $userData['class_code']);
+                $stmt->bind_param("issssssss", $userId, $userData['student_code'], $userData['first_name'], $userData['last_name'], $userData['phone'], $userData['email'], $userData['major'], $userData['dob'], $userData['class_code']);
                 $stmt->execute();
             }
             
